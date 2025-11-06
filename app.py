@@ -4,13 +4,13 @@ import requests
 import altair as alt
 from datetime import date, timedelta
 
-# --- 1. SETUP HALAMAN WEB ---
+# MAIN WEB
 st.set_page_config(page_title="Dashboard Kurs Realtime", layout="wide")
 st.title("Dashboard Realtime: Kurs USD ke IDR")
 st.write("Aplikasi ini mengambil data realtime dari API frankfurter publik dan menampilkannya data serta visualisasinya.")
 st.markdown("---")
 
-# --- 2. FUNGSI AMBIL DATA (Dicache agar cepat) ---
+# AMBIL DATA
 @st.cache_data(ttl=3600)
 def load_data():
     today = date.today()
@@ -35,14 +35,14 @@ def load_data():
         st.error(f"Gagal mengambil data: {e}")
         return pd.DataFrame()
 
-# --- 3. LOAD DATA ---
+# LOAD DATA
 with st.spinner('Sedang menarik data terbaru dari API...'):
     df = load_data()
 
 if not df.empty:
     col1, col2 = st.columns([1, 2])
 
-    # --- BAGIAN KIRI: DATAFRAME ---
+    # DATAFRAME
     with col1:
         st.subheader("📋 Data Tabel (30 Hari)")
         st.dataframe(df.sort_values('tanggal', ascending=False), height=400, use_container_width=True)
@@ -55,11 +55,11 @@ if not df.empty:
             mime="text/csv",
         )
 
-    # --- BAGIAN KANAN: VISUALISASI LEBIH JELAS (ALTAIR) ---
+    # VISUALISASI MENGGUNAKAN ALTAIR
     with col2:
         st.subheader("📈 Grafik Pergerakan Kurs USD - IDR")
         
-        # Membuat grafik interaktif dengan Altair
+        # grafik interaktif dengan Altair
         chart = alt.Chart(df).mark_line(point=True, color='red').encode(
             x=alt.X('tanggal', title='Tanggal', axis=alt.Axis(format='%d %b')),
             y=alt.Y('kurs_idr', title='Kurs (IDR)', scale=alt.Scale(zero=False)), # zero=False agar fluktuasi terlihat jelas
@@ -68,12 +68,12 @@ if not df.empty:
                 alt.Tooltip('kurs_idr', title='Kurs IDR', format=',.0f')
             ]
         ).properties(
-            height=400 # Tinggi grafik agar proporsional
+            height=400 # Tinggi grafik
         ).interactive() # Membuat grafik bisa di-zoom dan digeser
 
         st.altair_chart(chart, use_container_width=True)
 
-        # Statistik Ringkas
+        # Statistik
         st.markdown("#### Statistik Ringkas")
         kpi1, kpi2, kpi3 = st.columns(3)
         kpi1.metric("Harga Terakhir", f"Rp {df['kurs_idr'].iloc[-1]:,.0f}")
@@ -81,4 +81,5 @@ if not df.empty:
         kpi3.metric("Terendah (30d)", f"Rp {df['kurs_idr'].min():,.0f}")
 
 else:
+
     st.warning("Data tidak ditemukan. Coba refresh halaman beberapa saat lagi.")
